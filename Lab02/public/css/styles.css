@@ -1,0 +1,12 @@
+a {
+    font-weight: bold;
+}
+
+form {
+    margin-bottom: 40px;
+}
+
+#btnCoords {
+    margin-left: 10px;
+    margin-top: 25px !important;
+}

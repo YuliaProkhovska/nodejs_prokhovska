@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+    <title>Document</title>
+</head>
+<body>
+<section>
+    <div class="container-fluid">
+        <div class="row">
+            <div id="sidebar" class="col-4 vh-100 bg-info p-4">
+
+            </div>
+
+            <div id="chat" class="col-8 d-flex flex-column flex-grow-1 vh-100 p-0">
+
+                <div id="messages" class="flex-grow-1 overflow-auto">
+
+                </div>
+                <div style="height: 100px; width: 50px"></div>
+            </div>
+
+        </div>
+
+        <div class="row fixed-bottom">
+            <div class="col-4"></div>
+            <div id="compose" class="col-8 navbar-dark bg-dark">
+                <form id="message-form" class="form-inline">
+                    <div class="form-group flex-grow-1">
+                        <input type="text" name="message" placeholder="Message" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-warning btn-lg mr-3">Send</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+
+
+    </div>
+</section>
+
+<script id="message-template" type="text/html">
+    <div class="alert message {{bgClass}}">
+        <div>
+            <span class="message-name">{{username}}</span>
+            <span class="message-meta">{{createdAt}}</span>
+            {{#private}} (Private){{/private}}
+        </div>
+        <div>{{message}}</div>
+    </div>
+</script>
+
+
+<script id="sidebar-template" type="text/html">
+    <div class="alert alert-primary">
+        Room: <strong>{{room}}</strong><br>
+        Username: <strong>{{currentUser}}</strong>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="{{is_checked}}" id="isRoomPrivate">
+        <label class="form-check-label" for="isRoomPrivate">
+            Private room
+        </label>
+    </div>
+    <ul class="list-group">
+        <li class="list-group-item list-group-item-primary">Users in the chatroom</li>
+        {{#users}}
+        <li class="list-group-item">{{username}}</li>
+        {{/users}}
+    </ul>
+
+    <select id="recipient" class="form-control mb-2">
+        <option value="">Select recipient</option>
+        {{#users}}
+        <option value="{{username}}">{{username}}</option>
+        {{/users}}
+    </select>
+
+    <div class="user-typing">
+    </div>
+
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/3.1.0/mustache.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment-with-locales.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.9.1/qs.min.js"></script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    //elements
+    const $messageForm = document.querySelector("#message-form")
+    const $messageFormInput = $messageForm.querySelector("input");
+    const $messageFormButton = document.querySelector("button")
+    const $messages = document.querySelector("#messages")
+
+    //Templates
+    const messageTemplate = document.querySelector("#message-template").innerHTML
+    const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
+
+
+</script>
+
+<script>
+
+    const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
+
+    var socket = io();
+
+    socket.on('message', (message) => {
+        console.log(message)
+        let bgClass = 'bg-warning text-white'
+        if (message.username == username.toLowerCase()) {
+            bgClass = 'bg-success text-white pull-right'
+        } else if (message.username == 'Admin') {
+            bgClass = 'bg-info text-white'
+        }
+
+        const html = Mustache.render(messageTemplate, {
+            username: message.username,
+            message: message.text,
+            bgClass: bgClass,
+            createdAt: moment(message.createdAt).format('h:mm a')
+        })
+        $messages.insertAdjacentHTML('beforeend', html)
+    })
+
+    socket.on('roomData', ({users}) => {
+        const html = Mustache.render(sidebarTemplate, {
+            room,
+            currentUser: username,
+            is_checked: false,
+            users
+        })
+        document.querySelector('#sidebar').innerHTML = html
+    })
+
+    socket.on('userTyping', (message) => {
+        document.querySelector('.user-typing').innerHTML = `${message.username} is typing...`;
+        setTimeout(() => {
+            ClearUserTypingInfo()
+        }, 1000);
+    })
+
+    $messageForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        $messageFormButton.setAttribute('disabled', 'disabled');
+
+        const message = e.target.elements.message.value;
+        const to = document.getElementById('recipient').value; // Get the recipient
+
+        socket.emit('sendMessage', { message, to }, (error) => {
+            $messageFormButton.removeAttribute('disabled');
+            $messageFormInput.value = '';
+            $messageFormInput.focus();
+
+            if (error) {
+                return console.log(error);
+            }
+
+            console.log('Message delivered!');
+        });
+    });
+
+
+
+    setTimeout(() => {
+        $isPrivateCheckBox = document.querySelector("#isRoomPrivate");
+        if($isPrivateCheckBox === null) {
+            document.querySelector("#message-form").innerHTML = '';
+            document.location.href = document.referrer;
+            return;
+        }
+        else
+
+            $isPrivateCheckBox.addEventListener("input", (e) => {
+                let is_checked = $isPrivateCheckBox.checked;
+                socket.emit('setPrivate', {is_checked, room}, (error) => {
+                    if (error) {
+                        return console.log(error)
+                    }
+
+                    console.log('Changed room settings')
+                })
+            })
+    }, 1000);
+
+    $messageFormInput.addEventListener("input", (e) => {
+        socket.emit('userTyping', {username, room}, (error) => {
+            if (error) {
+                return console.log(error)
+            }
+
+            console.log('User is typing')
+        })
+    });
+
+
+    socket.emit('join', {username, room}, (error) => {
+        if (error) {
+            alert(error)
+            location.href = '/'
+        }
+    })
+
+
+
+    function ClearUserTypingInfo()
+    {
+        document.querySelector('.user-typing').innerHTML = ``;
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Tasks</title>
+    <style>
+        <!-- Стилі --> </style>
+</head>
+<body>
+<div class="container">
+    <h1>User Tasks</h1>
+    <!-- Форма для додавання нового таску -->
+    <form action="/user/tasks" method="POST">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" placeholder="Enter title" required>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" placeholder="Enter description" required></textarea>
+        <button type="submit">Add Task</button>
+    </form>
+    <!-- Таблиця із завданнями -->
+    <table>
+        <thead>
+        <tr>
+            <th>Title</th><th>Description</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{#each tasks}}
+            <tr>
+                <td>{{this.title}}</td>
+                <td>{{this.description}}</td>
+                <td class="actions">
+                    <a href="/user/tasks/{{this._id}}/edit">Edit</a>
+                    <a href="/user/tasks/{{this._id}}/delete" onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this task?')) { document.getElementById('delete-form-{{this._id}}').submit(); }">Delete</a>
+                    <form id="delete-form-{{this._id}}" action="/user/tasks/{{this._id}}/delete" method="POST" style="display: none;">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                    </form>
+                </td>
+            </tr>
+        {{/each}}
+        </tbody>
+    </table>
+    <a href="/auth/logout" class="logout-button">Logout</a>
+</div>
+</body>
+</html>

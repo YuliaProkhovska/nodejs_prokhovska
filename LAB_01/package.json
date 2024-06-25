@@ -1,0 +1,26 @@
+{
+  "name": "sandbox",
+  "version": "1.0.0",
+  "description": "Лабраторна робота №1. Виконала Проховська Юля, група ІПЗ-22-3(2)",
+  "main": "main",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YuliaProkhovska/nodejs_prokhovska"
+  },
+  "keywords": [
+    "njslab1"
+  ],
+  "author": "Prokhovska Yulia",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YuliaProkhovska/nodejs_prokhovska-/issues"
+  },
+  "homepage": "https://github.com/YuliaProkhovska/nodejs_prokhovska",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "yargs": "^17.7.2"
+  }
+}

@@ -1,0 +1,15 @@
+a {
+    font-weight: bold;
+}
+
+form {
+    margin-bottom: 40px;
+}
+
+#buttonSearch {
+    margin-top: 5px !important;
+}
+
+#btnCoords {
+    margin-top: 25px !important;
+}
